@@ -1,4 +1,5 @@
 ---
+# Requires: ansible-galaxy collection install community.docker
 - name: Configure DevOps Lab VM
   hosts: all
   become: true
@@ -35,7 +36,7 @@
         registry_url: "{{ acr_server }}"
         username: "{{ acr_username }}"
         password: "{{ acr_password }}"
-      no_log: true
+      no_log: true   # skry credentials v logoch
 
     - name: Pull devops-lab image
       docker_image:
