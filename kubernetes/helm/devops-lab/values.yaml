@@ -1,0 +1,22 @@
+image:
+  repository: devopslabacrtf01.azurecr.io/devops-lab
+  tag: "v1"
+  pullPolicy: Always
+
+replicaCount: 2
+
+service:
+  type: NodePort
+  port: 8080
+  nodePort: 30080
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+imagePullSecrets:
+  - name: acr-secret
