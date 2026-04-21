@@ -9,6 +9,12 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      APP_NAME: devops-lab-app
+      RESOURCE_GROUP: devops-lab-rg-tf
 
     steps:
       - name: Checkout code
@@ -18,6 +24,9 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Ensure containerapp CLI extension
+        run: az extension add --name containerapp --only-show-errors
 
       - name: Build and push image to ACR
         run: |
@@ -29,15 +38,15 @@ jobs:
       - name: Deploy new image to Container App
         run: |
           az containerapp update \
-            --name devops-lab-app \
-            --resource-group devops-lab-rg-tf \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ secrets.ACR_LOGIN_SERVER }}/devops-lab:${{ github.sha }}
 
       - name: Verify deployment
         run: |
           APP_URL=$(az containerapp show \
-            --name devops-lab-app \
-            --resource-group devops-lab-rg-tf \
+            --name ${{ env.APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
             --query properties.configuration.ingress.fqdn -o tsv)
           sleep 30
           curl -f "https://$APP_URL/health"
