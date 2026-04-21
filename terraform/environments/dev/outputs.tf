@@ -1,5 +1,5 @@
 output "app_url" {
-  value       = "https://${azurerm_container_app.app.ingress[0].fqdn}"
+  value       = module.app.app_url
   description = "URL nasadenej aplikácie"
 }
 
