@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and push image to ACR
+        run: |
+          az acr build \
+            --registry ${{ secrets.ACR_LOGIN_SERVER }} \
+            --image devops-lab:${{ github.sha }} \
+            ./app
+
+      - name: Deploy new image to Container App
+        run: |
+          az containerapp update \
+            --name devops-lab-app \
+            --resource-group devops-lab-rg-tf \
+            --image ${{ secrets.ACR_LOGIN_SERVER }}/devops-lab:${{ github.sha }}
+
+      - name: Verify deployment
+        run: |
+          APP_URL=$(az containerapp show \
+            --name devops-lab-app \
+            --resource-group devops-lab-rg-tf \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          sleep 30
+          curl -f "https://$APP_URL/health"
