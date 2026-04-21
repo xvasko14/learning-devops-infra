@@ -1,0 +1,52 @@
+---
+- name: Configure DevOps Lab VM
+  hosts: all
+  become: true
+
+  vars:
+    acr_server: "devopslabacrtf01.azurecr.io"
+    app_image: "devopslabacrtf01.azurecr.io/devops-lab:v1"
+    app_port: 8080
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+          - curl
+        state: present
+        update_cache: true
+
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add azureuser to docker group
+      user:
+        name: azureuser
+        groups: docker
+        append: true
+
+    - name: Log in to Azure Container Registry
+      docker_login:
+        registry_url: "{{ acr_server }}"
+        username: "{{ acr_username }}"
+        password: "{{ acr_password }}"
+      no_log: true
+
+    - name: Pull devops-lab image
+      docker_image:
+        name: "{{ app_image }}"
+        source: pull
+
+    - name: Run devops-lab container
+      docker_container:
+        name: devops-lab
+        image: "{{ app_image }}"
+        state: started
+        restart_policy: always
+        ports:
+          - "{{ app_port }}:{{ app_port }}"
